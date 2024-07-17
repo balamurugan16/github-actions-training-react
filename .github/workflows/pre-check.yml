@@ -1,0 +1,17 @@
+name: Pre-check
+
+on:
+  push:
+    branches:
+      - main
+    paths: 
+      - src
+
+jobs:
+  run-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout respository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3 
