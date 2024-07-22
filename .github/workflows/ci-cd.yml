@@ -38,15 +38,38 @@ jobs:
   deploy-dev:
     if:  contains(github.ref_name, 'main')
     needs: build-test
-    uses: ./.github/workflows/deploy_to_azure.yml
-    with:
-      environment: development
-      image: ${{ needs.build-test.outputs.image }}
+    environment: development
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ env.server }}
+          username: ${{ env.username }}
+          password: ${{ env.password }}
+      - name: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.APP_NAME }}
+          publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+          images: ${{needs.build-test.outputs.image}}
+     
 
   deploy-test:
     if:  contains(github.ref_name, 'release')
     needs: build-test
-    uses: ./.github/workflows/deploy_to_azure.yml
-    with:
-      environment: testing
-      image: ${{ needs.build-test.outputs.image }}
+    environment: testing
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ env.server }}
+          username: ${{ env.username }}
+          password: ${{ env.password }}
+      - name: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.APP_NAME }}
+          publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+          images: ${{needs.build-test.outputs.image}}
