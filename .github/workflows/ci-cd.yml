@@ -1,0 +1,54 @@
+name: app-ci 
+
+on:
+  push:
+    branches: 
+      - main
+      - release*
+
+env:
+  server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+  username: ${{ secrets.ACR_USERNAME }}
+  password: ${{ secrets.ACR_PASSWORD }}
+  repository: frontend
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.export-image.outputs.image }}
+    steps:
+      - name: Clone repo
+        uses: actions/checkout@v4
+      - name: Building the image name
+        run: |
+          echo "${{ env.server }}/${{ env.repository }}:${{ github.ref_name }}-${{ github.run_number }}" >> "$IMAGE"
+      - name: Build the docker image
+        run: docker build . -t "$IMAGE"
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.server }}
+          username: ${{ env.username }}
+          password: ${{ env.password }}
+      - name: Push the docker image
+        run: docker push "$IMAGE"
+      - name: Export image name
+        id: export-image
+        run: echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+  deploy-dev:
+    if:  contains(github.ref_name, 'main')
+    needs: build-test
+    uses: ./.github/workflows/deploy_to_azure.yml
+    with:
+      environment: development
+      image: ${{ needs.build-test.outputs.image }}
+
+  deploy-test:
+    if:  contains(github.ref_name, 'release')
+    needs: build-test
+    uses: ./.github/workflows/deploy_to_azure.yml
+    with:
+      environment: testing
+      image: ${{ needs.build-test.outputs.image }}

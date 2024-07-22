@@ -1,0 +1,36 @@
+name: Deploy to Azure
+
+on:
+  workflow_call: 
+    inputs:
+      image:
+        type: string
+        required: true
+      environment:
+        type: string
+        required: true
+
+env:
+  server: ${{ secrets.AZURE_CONTAINER_REGISTRY }}
+  username: ${{ secrets.ACR_USERNAME }}
+  password: ${{ secrets.ACR_PASSWORD }}
+  app-name: ${{ secrets.APP_NAME }}
+  publish-profile: ${{ secrets.PUBLISH_PROFILE }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v2
+        with:
+          login-server: ${{ env.server }}
+          username: ${{ env.username }}
+          password: ${{ env.password }}
+      - name: deploy
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.app-name }}
+          publish-profile: ${{ env.publish-profile }}
+          images: ${{ inputs.image }}
