@@ -22,7 +22,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Building the image name
         run: |
-          echo "${{ env.server }}/${{ env.repository }}:${{ github.ref_name }}-${{ github.run_number }}" >> "$IMAGE"
+          export IMAGE="${{ env.server }}/${{ env.repository }}:${{ github.ref_name }}-${{ github.run_number }}"
+          echo $GITHUB_OUTPUT
       - name: Build the docker image
         run: docker build . -t "$IMAGE"
       - name: Login to Azure Container Registry
@@ -35,7 +36,7 @@ jobs:
         run: docker push "$IMAGE"
       - name: Export image name
         id: export-image
-        run: echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+        run: echo "image=$IMAGE" >> "$GITHUB_OUTPUT" # This env has a file path
 
   deploy-dev:
     if:  contains(github.ref_name, 'main')
