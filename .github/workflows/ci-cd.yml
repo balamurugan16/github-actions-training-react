@@ -16,15 +16,16 @@ jobs:
   build-test:
     runs-on: ubuntu-latest
     outputs:
-      image: ${{ steps.export-image.outputs.image }}
+      image: ${{ steps.image.outputs.image }}
     steps:
       - name: Clone repo
         uses: actions/checkout@v4
       - name: Building the image name
+        id: image
         run: |
-          export IMAGE="${{ env.server }}/${{ env.repository }}:${{ github.ref_name }}-${{ github.run_number }}"
+          echo "image=${{ env.server }}/${{ env.repository }}:${{ github.ref_name }}-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
       - name: Build the docker image
-        run: docker build . -t $IMAGE
+        run: docker build . -t ${{ steps.image.outputs.image }}
       - name: Login to Azure Container Registry
         uses: azure/docker-login@v1
         with:
@@ -32,10 +33,7 @@ jobs:
           username: ${{ env.username }}
           password: ${{ env.password }}
       - name: Push the docker image
-        run: docker push $IMAGE
-      - name: Export image name
-        id: export-image
-        run: echo "image=$IMAGE" >> "$GITHUB_OUTPUT" # This env has a file path
+        run: docker push ${{ steps.image.outputs.image }}
 
   deploy-dev:
     if:  contains(github.ref_name, 'main')
