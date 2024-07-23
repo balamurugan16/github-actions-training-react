@@ -1,0 +1,20 @@
+name: Assign label for issue
+on:
+  issues:
+    types:
+     - opened
+jobs:
+  assign_label:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: assign label
+        if: contains(github.event.issue.title, 'bug')
+        run: |
+          curl -X POST \
+          ---url https://api.github.com/repos/${{ github.repository }}/issues/${{ github.event.issue.number }}/labels \
+          -H 'authorization: Bearer ${{ secrets.GITHUB_TOkEN }}' \
+          -H 'content-type: application/json' \
+          -d '{ "labels": ["bugs"] }' \
+          --fail
